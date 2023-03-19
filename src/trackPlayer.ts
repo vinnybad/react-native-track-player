@@ -222,6 +222,10 @@ async function seekTo(position: number): Promise<void> {
   return TrackPlayer.seekTo(position);
 }
 
+async function setTimeRange(startTime: number, endTime: number, repeat: boolean): Promise<void> {
+  return TrackPlayer.setTimeRange(startTime, endTime, repeat);
+}
+
 /**
  * Sets the volume of the player.
  */
@@ -341,6 +345,7 @@ export default {
   play,
   pause,
   seekTo,
+  setTimeRange,
   setVolume,
   setRate,
   setRepeatMode,

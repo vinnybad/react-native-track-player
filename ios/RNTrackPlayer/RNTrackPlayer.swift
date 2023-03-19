@@ -20,9 +20,21 @@ public class RNTrackPlayer: RCTEventEmitter, AudioSessionControllerDelegate {
     private let audioSessionController = AudioSessionController.shared
     private var shouldEmitProgressEvent: Bool = false
 
+    private var startTime: Double
+    private var endTime: Double
+    private var repeat: Bool
+    private var nextEndsTime: Double
+    
+    private static let NEVER = Double.greatestFiniteMagnitude
+
     // MARK: - Lifecycle Methods
 
     public override init() {
+        self.startTime = 0
+        self.endTime = 0
+        self.repeat = false
+        self.nextEndsTime = RNTrackPlayer.NEVER
+
         super.init()
 
         audioSessionController.delegate = self
@@ -137,6 +149,14 @@ public class RNTrackPlayer: RCTEventEmitter, AudioSessionControllerDelegate {
     }
 
     // MARK: - Bridged Methods
+    
+    @objc(setTimeRange:endTime:repeat:resolver:rejecter:)
+    public func setTimeRange(startTime: Double, endTime: Double, repeats: Bool, resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
+        self.startTime = startTime
+        self.endTime = endTime
+        self.repeat = repeats
+        resolve()
+    }
 
     @objc(setupPlayer:resolver:rejecter:)
     public func setupPlayer(config: [String: Any], resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
@@ -484,6 +504,11 @@ public class RNTrackPlayer: RCTEventEmitter, AudioSessionControllerDelegate {
 
         try? AVAudioSession.sharedInstance().setActive(true)
         player.play()
+        
+        if self.startTime > 0 && self.endTime > 0 {
+            self.nextEndsTime = Date().timeIntervalSince1970 + (self.endTime - self.startTime)
+        }
+        
         resolve(NSNull())
     }
 
@@ -495,6 +520,9 @@ public class RNTrackPlayer: RCTEventEmitter, AudioSessionControllerDelegate {
         }
 
         player.pause()
+        
+        self.nextEndsTime = RNTrackPlayer.NEVER
+        
         resolve(NSNull())
     }
 
@@ -823,6 +851,19 @@ public class RNTrackPlayer: RCTEventEmitter, AudioSessionControllerDelegate {
         // _after_ a manipulation to the queu causing no currentItem to exist (see reset)
         // in which case we shouldn't emit anything or we'll get an exception.
         if !shouldEmitProgressEvent || player.currentItem == nil { return }
+        
+        if self.startTime > 0 && self.endTime > 0 {
+            let now = Date().timeIntervalSince1970
+            if now >= self.nextEndsTime {
+                if self.repeat {
+                    self.nextEndsTime = now + (self.endTime - self.startTime)
+                } else {
+                    player.pause()
+                }
+                player.seek(to: self.startTime)
+            }
+        }
+        
 
         sendEvent(
             withName: "playback-progress-updated",
@@ -835,3 +876,4 @@ public class RNTrackPlayer: RCTEventEmitter, AudioSessionControllerDelegate {
         )
     }
 }
+

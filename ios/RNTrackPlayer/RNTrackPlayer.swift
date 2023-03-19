@@ -316,7 +316,7 @@ public class RNTrackPlayer: RCTEventEmitter, AudioSessionControllerDelegate {
     private func configureProgressUpdateEvent(interval: Double) {
         shouldEmitProgressEvent = interval > 0
         self.player.timeEventFrequency = shouldEmitProgressEvent
-            ? .custom(time: CMTime(seconds: interval, preferredTimescale: 1))
+            ? .custom(time: CMTime(seconds: interval, preferredTimescale: Int32(NSEC_PER_SEC)))
             : .everySecond
     }
 

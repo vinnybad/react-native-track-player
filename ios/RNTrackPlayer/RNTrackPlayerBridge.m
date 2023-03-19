@@ -13,7 +13,7 @@
 
 RCT_EXTERN_METHOD(setTimeRange:(double)startTime
                   endTime:(double)endTime
-                  repeat:(BOOL)repeat
+                  repeats:(BOOL)repeats
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject);
 

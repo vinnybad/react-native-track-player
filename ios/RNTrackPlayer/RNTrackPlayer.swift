@@ -22,7 +22,7 @@ public class RNTrackPlayer: RCTEventEmitter, AudioSessionControllerDelegate {
 
     private var startTime: Double
     private var endTime: Double
-    private var repeat: Bool
+    private var repeats: Bool
     private var nextEndsTime: Double
     
     private static let NEVER = Double.greatestFiniteMagnitude
@@ -32,7 +32,7 @@ public class RNTrackPlayer: RCTEventEmitter, AudioSessionControllerDelegate {
     public override init() {
         self.startTime = 0
         self.endTime = 0
-        self.repeat = false
+        self.repeats = false
         self.nextEndsTime = RNTrackPlayer.NEVER
 
         super.init()
@@ -150,12 +150,12 @@ public class RNTrackPlayer: RCTEventEmitter, AudioSessionControllerDelegate {
 
     // MARK: - Bridged Methods
     
-    @objc(setTimeRange:endTime:repeat:resolver:rejecter:)
+    @objc(setTimeRange:endTime:repeats:resolver:rejecter:)
     public func setTimeRange(startTime: Double, endTime: Double, repeats: Bool, resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
         self.startTime = startTime
         self.endTime = endTime
-        self.repeat = repeats
-        resolve()
+        self.repeats = repeats
+        resolve(NSNull())
     }
 
     @objc(setupPlayer:resolver:rejecter:)
@@ -855,7 +855,7 @@ public class RNTrackPlayer: RCTEventEmitter, AudioSessionControllerDelegate {
         if self.startTime > 0 && self.endTime > 0 {
             let now = Date().timeIntervalSince1970
             if now >= self.nextEndsTime {
-                if self.repeat {
+                if self.repeats {
                     self.nextEndsTime = now + (self.endTime - self.startTime)
                 } else {
                     player.pause()

@@ -128,6 +128,12 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
     }
 
     @ReactMethod
+    fun setTimeRange(startTime: Double, endTime: Double, repeats: Boolean, promise: Promise) {
+        musicService.setTimeRange(startTime, endTime, repeats);
+        promise.resolve(null);
+    }
+
+    @ReactMethod
     fun setupPlayer(data: ReadableMap?, promise: Promise) {
         if (isServiceBound) {
             promise.reject(

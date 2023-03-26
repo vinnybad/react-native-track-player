@@ -25,6 +25,7 @@ import com.doublesymmetry.trackplayer.utils.BundleUtils
 import com.doublesymmetry.trackplayer.utils.BundleUtils.setRating
 import com.facebook.react.HeadlessJsTaskService
 import com.facebook.react.bridge.Arguments
+import com.facebook.react.bridge.Promise
 import com.facebook.react.jstasks.HeadlessJsTaskConfig
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.flow
@@ -37,6 +38,10 @@ class MusicService : HeadlessJsTaskService() {
     private val scope = MainScope()
     private var progressUpdateJob: Job? = null
 
+    private var startTime: Double = 0.0
+    private var endTime: Double = 0.0
+    private var repeats: Boolean = false
+    private var nextEndsTime: Double = 0.0
 
     /**
      * Use [appKilledPlaybackBehavior] instead.
@@ -176,6 +181,18 @@ class MusicService : HeadlessJsTaskService() {
     @MainThread
     private fun progressUpdateEventFlow(interval: Double) = flow {
         while (true) {
+            if (this@MusicService.startTime > 0 && this@MusicService.endTime > 0) {
+                val now = System.currentTimeMillis() / 1000.0
+                if (now >= this@MusicService.nextEndsTime) {
+                    if (this@MusicService.repeats) {
+                        this@MusicService.nextEndsTime = now + (this@MusicService.endTime - this@MusicService.startTime)
+                    } else {
+                        this@MusicService.player.pause()
+                    }
+                    this@MusicService.player.seek(this@MusicService.startTime.toLong(), TimeUnit.SECONDS)
+                }
+            }
+
             if (player.isPlaying) {
                 val bundle = progressUpdateEvent()
                 emit(bundle)
@@ -183,6 +200,13 @@ class MusicService : HeadlessJsTaskService() {
 
             delay((interval * 1000).toLong())
         }
+    }
+
+    @MainThread
+    fun setTimeRange(startTime: Double, endTime: Double, repeats: Boolean) {
+        this.startTime = startTime
+        this.endTime = endTime
+        this.repeats = repeats
     }
 
     @MainThread
@@ -239,6 +263,11 @@ class MusicService : HeadlessJsTaskService() {
     @MainThread
     fun play() {
         player.play()
+
+        if (this.startTime > 0 && this.endTime > 0) {
+            val currentTimeInSeconds = System.currentTimeMillis() / 1000.0
+            this.nextEndsTime = currentTimeInSeconds + (this.endTime - this.startTime)
+        }
     }
 
     @MainThread
